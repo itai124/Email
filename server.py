@@ -2,7 +2,7 @@ import imaplib
 import mailbox
 import email.utils
 import threading
-import localmail
+import localmai
 import smtplib
 import socket
 

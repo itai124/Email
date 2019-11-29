@@ -40,22 +40,26 @@ def fetch_mail_msg():
     imap.select('Inbox')
     tmp, data = imap.search(None, 'ALL')
     for num in data[0].split():
+            print "------"
             tmp, data = imap.fetch(num, '(RFC822)')
+            print  data
+            if tmp != 'OK':
+                print "ERROR getting message", num
             print('Message: {0}\n'.format(num))
             pprint.pprint(data[0][1])
-            break
     imap.close()
 
 
 SMTP_PORT = 2025
 IMAP_PORT = 143
-SMTP_IP="172.16.10.216"
-IMAP_IP="172.16.10.216"
+SMTP_IP="172.16.10.157"
+IMAP_IP="172.16.10.157"
 rs = redis.Redis(host='localhost', port=6379, db=0)
-rs.set('1','172.16.10.216')
-rs.set('2','172.16.10.217')
+rs.set('1','172.16.10.184')
+rs.set('2','172.16.10.154')
 IPAddr = socket.gethostbyname( socket.gethostname())
 while(True):
+    print "-------------------------------"
     check=raw_input("hello client welcome to my server if u want to send mail click S and if you want to check out your mails click F: ")
     if check=="S":
         txt= raw_input("enter the txt you wanna send: ")
