@@ -9,6 +9,7 @@ import email.utils
 import smtplib
 import redis
 import pickle
+from threading import Lock, Thread
 from email.mime.text import MIMEText
 
 def smtp_mail(txt,subject,dst,Ip):
@@ -53,10 +54,14 @@ def handler(clientsock,addr):
         if not data:
             break
         if(fixed_data[0]=="S"):
+            lock.acquire()
             smtp_mail(fixed_data[3],fixed_data[2],fixed_data[1],addr[0])
             clientsock.send("sent your mail")
+            lock.release()
         elif(fixed_data[0]=="F"):
+            lock.acquire()
             fetch_mail_msg()
+            lock.release()
 
 
 
@@ -69,7 +74,7 @@ SMTP_PORT = 2025
 IMAP_PORT = 143
 SMTP_IP="172.16.10.157"
 IMAP_IP="172.16.10.157"
-
+lock=Lock()
 
 counter=0
 IPAddr = gethostbyname(gethostname())
