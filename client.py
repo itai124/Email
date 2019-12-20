@@ -17,13 +17,13 @@ from email.mime.text import MIMEText
 
 
 rs = redis.Redis(host='localhost', port=6379, db=0)
-rs.set('1','172.16.10.184')
+rs.set('1','172.16.11.211')
 rs.set('2','172.16.10.154')
 IPAddr = gethostbyname(gethostname())
 #sockets
 Host = 'localhost'
-Port = 50000
-Buffsize = 1024*9
+Port = 50007
+buffsize = 1024*9
 Addr = (Host,Port)
 TCPclientsock = socket(AF_INET,SOCK_STREAM)
 TCPclientsock.connect(Addr)
@@ -45,7 +45,9 @@ while(True):
         byted_data = pickle.dumps(data)
         TCPclientsock.send(byted_data)
         server_data = TCPclientsock.recv(buffsize)
-        print server_data
+        got_emails=pickle.loads(server_data)
+        for email in got_emails:
+            pprint.pprint(email)
 
 
 

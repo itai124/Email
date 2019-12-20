@@ -1,5 +1,6 @@
 import email.utils
 import threading
+import thread
 import localmail
 from socket import *
 import pprint
@@ -30,11 +31,12 @@ def smtp_mail(txt,subject,dst,Ip):
     finally:
         server.quit()
 
-def fetch_mail_msg():
+def fetch_mail_msg(emails):
     imap = imaplib.IMAP4(IMAP_IP,IMAP_PORT)
     imap.login('username', 'password')
     imap.select('Inbox')
     tmp, data = imap.search(None, 'ALL')
+    emails = []
     for num in data[0].split():
             print "------"
             tmp, data = imap.fetch(num, '(RFC822)')
@@ -42,12 +44,14 @@ def fetch_mail_msg():
             if tmp != 'OK':
                 print "ERROR getting message", num
             print('Message: {0}\n'.format(num))
+            emails.append(data[0][1])
             pprint.pprint(data[0][1])
+    return emails
     imap.close()
 
 
-def handler(clientsock,addr):
-    while True:
+def handler(clientsock,addr,emails):
+    while 1:
         data = clientsock.recv(Buffsize)
         fixed_data=pickle.loads(data)
         print fixed_data
@@ -60,7 +64,9 @@ def handler(clientsock,addr):
             lock.release()
         elif(fixed_data[0]=="F"):
             lock.acquire()
-            fetch_mail_msg()
+            pass_emails=fetch_mail_msg(emails)
+            byted_data = pickle.dumps(pass_emails)
+            clientsock.send(byted_data)
             lock.release()
 
 
@@ -72,32 +78,33 @@ def handler(clientsock,addr):
 # main
 SMTP_PORT = 2025
 IMAP_PORT = 143
-SMTP_IP="172.16.10.157"
-IMAP_IP="172.16.10.157"
+SMTP_IP="172.16.11.211"
+IMAP_IP="172.16.11.211"
 lock=Lock()
-
+emails=[]
 counter=0
 IPAddr = gethostbyname(gethostname())
-thread = threading.Thread(
+mail_thread = threading.Thread(
     target=localmail.run,
     args=(SMTP_PORT, IMAP_PORT, 8880, 'localmail.mbox')
 )
-thread.start()
+
+mail_thread.start()
+
 print "waiting for clients"
 Host = 'localhost'
-Socket_Port= 50000
+Socket_Port= 50007
 Buffsize = 1024 * 9
 Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
 servsock.bind(Addr)
-servsock.listen(5)
+servsock.listen(3)
 
 while True:
     print "Im waiting for connection..."
     clientsock, addr = servsock.accept()
     print "yay! connected from: ", addr
-    # setting thread and handler for each client
-    thread.start_new_thread(handler, (clientsock, addr))
+    thread.start_new_thread(handler, (clientsock, addr, emails))
 
 servsock.close()
 
