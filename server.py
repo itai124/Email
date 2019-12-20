@@ -92,7 +92,7 @@ mail_thread = threading.Thread(
 mail_thread.start()
 
 print "waiting for clients"
-Host = 'localhost'
+Host = '172.16.11.211'
 Socket_Port= 50007
 Buffsize = 1024 * 9
 Addr = (Host, Socket_Port)

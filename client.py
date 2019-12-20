@@ -21,7 +21,7 @@ rs.set('1','172.16.11.211')
 rs.set('2','172.16.10.154')
 IPAddr = gethostbyname(gethostname())
 #sockets
-Host = 'localhost'
+Host = '172.16.11.211'
 Port = 50007
 buffsize = 1024*9
 Addr = (Host,Port)
