@@ -10,6 +10,7 @@ import email.utils
 import smtplib
 import redis
 import pickle
+import  ssl
 from threading import Lock, Thread
 from email.mime.text import MIMEText
 
@@ -31,7 +32,7 @@ def smtp_mail(txt,subject,dst,Ip):
     finally:
         server.quit()
 
-def fetch_mail_msg(emails):
+def fetch_mail_msg(emails,addr):
     imap = imaplib.IMAP4(IMAP_IP,IMAP_PORT)
     imap.login('username', 'password')
     imap.select('Inbox')
@@ -44,8 +45,9 @@ def fetch_mail_msg(emails):
             if tmp != 'OK':
                 print "ERROR getting message", num
             print('Message: {0}\n'.format(num))
-            emails.append(data[0][1])
-            pprint.pprint(data[0][1])
+            if addr in data[0][1]:
+                emails.append(data[0][1])
+                pprint.pprint(data[0][1])
     return emails
     imap.close()
 
@@ -64,7 +66,7 @@ def handler(clientsock,addr,emails):
             lock.release()
         elif(fixed_data[0]=="F"):
             lock.acquire()
-            pass_emails=fetch_mail_msg(emails)
+            pass_emails=fetch_mail_msg(emails,addr[0])
             byted_data = pickle.dumps(pass_emails)
             clientsock.send(byted_data)
             lock.release()
@@ -92,21 +94,28 @@ mail_thread = threading.Thread(
 mail_thread.start()
 
 print "waiting for clients"
-Host = '172.16.11.211'
-Socket_Port= 50007
+Host = IPAddr
+print Host
+Socket_Port= 50008
 Buffsize = 1024 * 9
 Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
-servsock.bind(Addr)
-servsock.listen(3)
+#servsock.settimeout(10)
+'''https://www.example-code.com/python/ssl_server.asp'''
+wrappedSocketServer = ssl.wrap_socket(servsock, ssl_version=ssl.PROTOCOL_TLSv1,server_side=True,certfile="cert.pem",keyfile="cert.pem")
+wrappedSocketServer.load_cert_chain(certfile="cert.pem", keyfile="cert.pem")
+cipher = ['DHE-RSA-AES128-SHA', 'DHE-RSA-AES256-SHA', 'ECDHE-ECDSA-AES128-GCM-SHA256']
+wrappedSocketServer.set_ciphers(cipher)
+wrappedSocketServer.bind(Addr)
+wrappedSocketServer.listen(3)
 
 while True:
     print "Im waiting for connection..."
-    clientsock, addr = servsock.accept()
+    clientsock, addr = wrappedSocketServer.accept()
     print "yay! connected from: ", addr
     thread.start_new_thread(handler, (clientsock, addr, emails))
 
-servsock.close()
+wrappedSocketServer.close()
 
 
 
