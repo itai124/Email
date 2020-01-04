@@ -80,8 +80,8 @@ def handler(clientsock,addr,emails):
 # main
 SMTP_PORT = 2025
 IMAP_PORT = 143
-SMTP_IP="172.16.11.211"
-IMAP_IP="172.16.11.211"
+SMTP_IP="169.254.153.36"
+IMAP_IP="169.254.153.36"
 lock=Lock()
 emails=[]
 counter=0
@@ -102,20 +102,16 @@ Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
 #servsock.settimeout(10)
 '''https://www.example-code.com/python/ssl_server.asp'''
-wrappedSocketServer = ssl.wrap_socket(servsock, ssl_version=ssl.PROTOCOL_TLSv1,server_side=True,certfile="cert.pem",keyfile="cert.pem")
-wrappedSocketServer.load_cert_chain(certfile="cert.pem", keyfile="cert.pem")
-cipher = ['DHE-RSA-AES128-SHA', 'DHE-RSA-AES256-SHA', 'ECDHE-ECDSA-AES128-GCM-SHA256']
-wrappedSocketServer.set_ciphers(cipher)
-wrappedSocketServer.bind(Addr)
-wrappedSocketServer.listen(3)
+servsock.bind(Addr)
+servsock.listen(3)
 
 while True:
     print "Im waiting for connection..."
-    clientsock, addr = wrappedSocketServer.accept()
+    clientsock, addr = servsock.accept()
     print "yay! connected from: ", addr
     thread.start_new_thread(handler, (clientsock, addr, emails))
 
-wrappedSocketServer.close()
+servsock.close()
 
 
 
