@@ -43,6 +43,10 @@ def decrypt_a_msg(encrypted, private_key):
 msg = "I want email"
 private_key = generate_a_keys()#generates public and private keys
 public_key = private_key.public_key()
+seralize=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)
+print seralize
+un_ser=load_pem_public_key(public_key, backend=default_backend())
+print un_ser
 encrypted_msg = encrypt_a_msg(msg, public_key)
 print encrypted_msg
 decrypted_msg = decrypt_a_msg(encrypted_msg, private_key)

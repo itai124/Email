@@ -14,6 +14,54 @@ import  ssl
 from threading import Lock, Thread
 from email.mime.text import MIMEText
 
+
+import base64
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
+
+#defs--------------------------------------------------------
+def generate_a_keys():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048*3,
+        backend=default_backend())
+    return private_key
+
+def generate_key():
+    key = Fernet.generate_key()
+    return key
+
+def encrypt_a_msg(message, public_key):
+    encrypted = public_key.encrypt(
+        message,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return encrypted
+
+def decrypt_a_msg(encrypted, private_key):
+    original = private_key.decrypt(
+        encrypted,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return original
+
+
+
 def smtp_mail(txt,subject,dst,Ip):
 
     msg = MIMEText(txt)
@@ -51,24 +99,39 @@ def fetch_mail_msg(emails,addr):
     return emails
     imap.close()
 
+#-----------------------------------------------------
 
-def handler(clientsock,addr,emails):
+def handler(clientsock,addr,emails,keys):
+    client_public_key = clientsock.recv(Buffsize)
+    send_client_public_key=pickle.loads(client_public_key)
+    client_public_key= load_pem_public_key(send_client_public_key, backend=default_backend())
+    serialize_public_key=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)
+    send_serialize_public_key=pickle.dumps(serialize_public_key)
+    clientsock.send(send_serialize_public_key)
+    print "end of public key transformation"
+    print "start safe communication>>"
     while 1:
         data = clientsock.recv(Buffsize)
-        fixed_data=pickle.loads(data)
+        print "encrypted "+ data
+        decrypted_msg = decrypt_a_msg(data, private_key)
+        print decrypted_msg
+        fixed_data=pickle.loads(decrypted_msg)
         print fixed_data
-        if not data:
+        if not fixed_data:
             break
         if(fixed_data[0]=="S"):
             lock.acquire()
             smtp_mail(fixed_data[3],fixed_data[2],fixed_data[1],addr[0])
-            clientsock.send("sent your mail")
+            msg= "sent your mail"
+            encrypted_msg = encrypt_a_msg(msg, client_public_key)
+            clientsock.send(encrypted_msg)
             lock.release()
         elif(fixed_data[0]=="F"):
             lock.acquire()
             pass_emails=fetch_mail_msg(emails,addr[0])
             byted_data = pickle.dumps(pass_emails)
-            clientsock.send(byted_data)
+            encrypted_msg = encrypt_a_msg(byted_data, client_public_key)
+            clientsock.send(encrypted_msg)
             lock.release()
 
 
@@ -96,6 +159,9 @@ mail_thread.start()
 print "waiting for clients"
 Host = IPAddr
 print Host
+private_key = generate_a_keys()#generates public and private keys
+public_key = private_key.public_key()
+keys=[private_key,public_key]
 Socket_Port= 50008
 Buffsize = 1024 * 9
 Addr = (Host, Socket_Port)
@@ -109,7 +175,8 @@ while True:
     print "Im waiting for connection..."
     clientsock, addr = servsock.accept()
     print "yay! connected from: ", addr
-    thread.start_new_thread(handler, (clientsock, addr, emails))
+
+    thread.start_new_thread(handler, (clientsock, addr, emails,keys))
 
 servsock.close()
 
