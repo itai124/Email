@@ -162,7 +162,7 @@ print Host
 private_key = generate_a_keys()#generates public and private keys
 public_key = private_key.public_key()
 keys=[private_key,public_key]
-Socket_Port= 50008
+Socket_Port= 50003
 Buffsize = 1024 * 9
 Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
