@@ -55,72 +55,92 @@ def decrypt_a_msg(encrypted, private_key):
     return original
 
 #-----------------------------------------------------
+IPAddr = gethostbyname(gethostname())
 
+#logging in to the auth server
+Host = IPAddr
+Port = 50009
+buffsize = 1024*9
+Addr = (Host,Port)
+TCPclientsock = socket(AF_INET,SOCK_STREAM)
+TCPclientsock.connect((Host, Port))
+choice = raw_input("welcome to the auth server. if you want to sign up write T and if you want to log in write L: ")
+TCPclientsock.send(choice)
+data = TCPclientsock.recv(buffsize)
+if data=="T":
+    name=raw_input("please give me your user name:")
+    password = raw_input("please give me your password:")
+    choice=[name,password]
+    send_auth=pickle.dumps(choice)
+    TCPclientsock.send(send_auth)
+    auth = TCPclientsock.recv(buffsize)
+    Email_Server_addr = pickle.loads(auth)
+elif data=="L":
+    name=raw_input("please write your username:")
+    password = raw_input("please write your password:")
+    choice = [name, password]
+    send_auth=pickle.dumps(choice)
+    TCPclientsock.send(send_auth)
+    auth = TCPclientsock.recv(buffsize)
+    Email_Server_addr=pickle.loads(auth)
     
 
 
 
-rs = redis.Redis(host='localhost', port=6379, db=0)
-rs.set('1','172.16.11.211')
-rs.set('2','169.254.153.36')
-rs.set('3','10.100.102.6')
 
-IPAddr = gethostbyname(gethostname())
-allow=False
+
+
+
 #sockets
 #packet, reply = "<packet>SOME_DATA</packet>", ""
-Host = IPAddr
-Port = 50008
+print Email_Server_addr
+Host = Email_Server_addr[0]
+Port = Email_Server_addr[1]
 buffsize = 1024*9
 Addr = (Host,Port)
 TCPclientsock = socket(AF_INET,SOCK_STREAM)
 #TCPclientsock.settimeout(10)
 TCPclientsock.connect((Host, Port))
 
-for i in range(1, 4):
-    check_user=rs.get(i)
-    if(check_user==IPAddr):
-        allow=True
-if allow:
-    print "allowed"
-    private_key = generate_a_keys()  # generates public and private keys
-    public_key = private_key.public_key()
-    serialized_public_key=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)#serialize the key
-    serialized_public_key=pickle.dumps(serialized_public_key)# pickle the key
-    TCPclientsock.send(serialized_public_key)# send the key
-    server_public_key = TCPclientsock.recv(buffsize)#recv key from server
-    server_public_key=pickle.loads(server_public_key)#load the key
-    server_public_key= load_pem_public_key(server_public_key, backend=default_backend())#back to the first form
-    while(True):
-        print "-------------------------------"
-        check=raw_input("hello client welcome to my server if u want to send mail click S and if you want to check out your emails click F: ")
-        if check=="S":
-            txt= raw_input("enter the txt you wanna send: ")
-            subject= raw_input("enter the subject of your data: ")
-            dst= raw_input("enter the ip of your dst client: ")
-            data=["S",dst,subject,txt]
-            byted_data= pickle.dumps(data)
-            encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
-            print "encrypted "+encrypted_msg
-            TCPclientsock.send(encrypted_msg)
-            server_data = TCPclientsock.recv(buffsize)
-            decrypted_msg = decrypt_a_msg(server_data,private_key)
-            print "after decrypte "+decrypted_msg
+print "allowed"
+private_key = generate_a_keys()  # generates public and private keys
+public_key = private_key.public_key()
+serialized_public_key=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)#serialize the key
+serialized_public_key=pickle.dumps(serialized_public_key)# pickle the key
+TCPclientsock.send(serialized_public_key)# send the key
+server_public_key = TCPclientsock.recv(buffsize)#recv key from server
+server_public_key=pickle.loads(server_public_key)#load the key
+server_public_key= load_pem_public_key(server_public_key, backend=default_backend())#back to the first form
+while(True):
+    print "-------------------------------"
+    check=raw_input("hello client welcome to my server if u want to send mail click S and if you want to check out your emails click F: ")
+    if check=="S":
+        txt= raw_input("enter the txt you wanna send: ")
+        subject= raw_input("enter the subject of your data: ")
+        dst= raw_input("enter the ip of your dst client: ")
+        data=["S",dst,subject,txt]
+        byted_data= pickle.dumps(data)
+        encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
+        print "encrypted "+encrypted_msg
+        TCPclientsock.send(encrypted_msg)
+        server_data = TCPclientsock.recv(buffsize)
+        decrypted_msg = decrypt_a_msg(server_data,private_key)
+        print "after decrypte "+decrypted_msg
 
-        if check=="F":
-            data=["F",None,None,None]
-            byted_data = pickle.dumps(data)
-            encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
-            print "encrypted "+encrypted_msg
-            TCPclientsock.send(encrypted_msg)
-            server_data = TCPclientsock.recv(buffsize)
-            decrypted_msg = decrypt_a_msg(server_data,private_key)
-            print "after decrypte "+decrypted_msg
-            got_emails=pickle.loads(decrypted_msg)
-            for email in got_emails:
-                pprint.pprint(email)
-else:
-    print "you are not allowed to use this email server. bye bye "
+    if check=="F":
+        data=["F",None,None,None]
+        byted_data = pickle.dumps(data)
+        encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
+        print "encrypted "+encrypted_msg
+        TCPclientsock.send(encrypted_msg)
+        server_data = TCPclientsock.recv(buffsize)
+        decrypted_msg = decrypt_a_msg(server_data,private_key)
+        print "after decrypte "+decrypted_msg
+        got_emails=pickle.loads(decrypted_msg)
+        for email in got_emails:
+            pprint.pprint(email)
+
+
 
 
 
