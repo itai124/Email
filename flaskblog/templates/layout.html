@@ -11,16 +11,26 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
 
     {% if title %}
+<<<<<<< HEAD
         <title>Flask Blog - {{ title }}</title>
     {% else %}
         <title>Flask Blog</title>
+=======
+        <title>Email'S - {{ title }}</title>
+    {% else %}
+        <title>Email'S</title>
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
     {% endif %}
 </head>
 <body>
     <header class="site-header">
       <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
         <div class="container">
+<<<<<<< HEAD
           <a class="navbar-brand mr-4" href="/">Flask Blog</a>
+=======
+          <a class="navbar-brand mr-4" href="/">Email'S</a>
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -32,7 +42,10 @@
             <!-- Navbar Right Side -->
             <div class="navbar-nav">
               {% if current_user.is_authenticated %}
+<<<<<<< HEAD
                 <a class="nav-item nav-link" href="{{ url_for('new_post') }}">New Post</a>
+=======
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
                 <a class="nav-item nav-link" href="{{ url_for('account') }}">Account</a>
                 <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
               {% else %}
@@ -64,9 +77,12 @@
             <p class='text-muted'>You can put any information here you'd like.
               <ul class="list-group">
                 <li class="list-group-item list-group-item-light">Latest Posts</li>
+<<<<<<< HEAD
                 <li class="list-group-item list-group-item-light">Announcements</li>
                 <li class="list-group-item list-group-item-light">Calendars</li>
                 <li class="list-group-item list-group-item-light">etc</li>
+=======
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
               </ul>
             </p>
           </div>

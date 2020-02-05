@@ -1,21 +1,49 @@
+<<<<<<< HEAD
 import os
 #import secrets
 from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort
 from _init_ import app, db, bcrypt
 from forms import RegistrationForm, LoginForm , UpdateAccountForm, PostForm
+=======
+from flask import render_template, url_for, flash, redirect, request
+from _init_ import app, db, bcrypt
+from forms import RegistrationForm, LoginForm
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
 from models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 
 
+<<<<<<< HEAD
 
 
 #db.create_all()
+=======
+posts = [
+    {
+        'author': 'Corey Schafer',
+        'title': 'Blog Post 1',
+        'content': 'First post content',
+        'date_posted': 'April 20, 2018'
+    },
+    {
+        'author': 'Jane Doe',
+        'title': 'Blog Post 2',
+        'content': 'Second post content',
+        'date_posted': 'April 21, 2018'
+    }
+]
+
+db.create_all()
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
 
 @app.route("/")
 @app.route("/home")
 def home():
+<<<<<<< HEAD
     posts = Post.query.all()
+=======
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
     return render_template('home.html', posts=posts)
 
 
@@ -51,7 +79,11 @@ def login():
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
+<<<<<<< HEAD
             flash('Login Unsuccessful. Please check username and password', 'danger')
+=======
+            flash('Login Unsuccessful. Please check email and password', 'danger')
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
     return render_template('login.html', title='Login', form=form)
 
 
@@ -61,6 +93,7 @@ def logout():
     return redirect(url_for('home'))
 
 
+<<<<<<< HEAD
 def save_picture(form_picture):
     random_hex= os.urandom(8).encode('hex')
     _, f_ext = os.path.splitext(form_picture.filename)
@@ -144,3 +177,10 @@ def delete_post(post_id):
     db.session.commit()
     flash('Your post has been deleted!', 'success')
     return redirect(url_for('home'))
+=======
+@app.route("/account")
+@login_required
+def account():
+    image_file = url_for('static',filename='profile_pics/' + current_user.image_file)
+        return render_template('account.html', title='Account', image_file=image_file)
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b

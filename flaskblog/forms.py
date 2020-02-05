@@ -1,7 +1,11 @@
 from flask_wtf import FlaskForm
+<<<<<<< HEAD
 from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
+=======
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from models import User,Post
 
@@ -27,6 +31,7 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
+<<<<<<< HEAD
 
 class UpdateAccountForm(FlaskForm):
     username = StringField('Username',
@@ -45,3 +50,5 @@ class PostForm(FlaskForm):
     content = TextAreaField('Content', validators=[DataRequired()])
     submit = SubmitField('Post')
     
+=======
+>>>>>>> d89536528e1c1c2611602bbb4938d694988a008b
