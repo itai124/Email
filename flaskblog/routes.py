@@ -13,12 +13,15 @@ from flask_login import login_user, current_user, logout_user, login_required
 
 
 
-#db.create_all()
+db.create_all()
 
 @app.route("/")
 @app.route("/home")
 def home():
-    posts = Post.query.all()
+    if current_user.is_authenticated:
+        posts = Post.query.filter_by(author=current_user)
+    else :
+        posts=[]
     return render_template('home.html', posts=posts)
 
 
@@ -61,6 +64,7 @@ def login():
 @app.route("/logout")
 def logout():
     logout_user()
+    posts=[]
     return redirect(url_for('home'))
 
 
@@ -102,19 +106,24 @@ def account():
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
-        post = Post(title=form.title.data, content=form.content.data, author=current_user)
+        print form.to.data
+        post = Post(title=form.title.data, content=form.content.data, to=form.to.data, author=current_user,)
         db.session.add(post)
         db.session.commit()
         flash('Your post has been created!', 'success')
         return redirect(url_for('home'))
-    return render_template('create_post.html', title='New Post',
-                           form=form, legend='New Post')
+    return render_template('create_post.html', title='New Email',
+                           form=form, legend='New Email')
 
 
 @app.route("/post/<int:post_id>")
 def post(post_id):
     post = Post.query.get_or_404(post_id)
-    return render_template('post.html', title=post.title, post=post)
+    if post :
+        print "T"
+    else:
+        print "ggg"
+    return render_template('post.html', title=post.title, post=post,)
 
 @app.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
 @login_required
@@ -125,15 +134,17 @@ def update_post(post_id):
     form = PostForm()
     if form.validate_on_submit():
         post.title = form.title.data
+        post.to= form.to.data
         post.content = form.content.data
         db.session.commit()
         flash('Your post has been updated!', 'success')
         return redirect(url_for('post', post_id=post.id))
     elif request.method == 'GET':
         form.title.data = post.title
+        form.to.data = post.to
         form.content.data = post.content
     return render_template('create_post.html', title='Update Post',
-                           form=form, legend='Update Post')
+                           form=form, legend='Update Email')
 
 
 @app.route("/post/<int:post_id>/delete", methods=['POST'])
@@ -142,9 +153,10 @@ def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
     if post.author != current_user:
         abort(403)
+        print "()"
     db.session.delete(post)
     db.session.commit()
-    flash('Your post has been deleted!', 'success')
+    flash('Your Email has been deleted!', 'success')
     return redirect(url_for('home'))
 
 '''
