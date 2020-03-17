@@ -158,20 +158,31 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('home'))
-        else:
-            flash('Login Unsuccessful. Please check email and password', 'danger')
+    if request.method == "POST":
+        req = request.form
+        username = req.get("username")
+        password = req.get("password")
+        conn = sql.connect('users.sqlite')
+        cursor = conn.cursor()
+        cursor.execute('''SELECT * FROM Users''')
+        users = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        for u in users:
+            if username == u[0] and password == u[1]:
+                session["USERNAME"] = username
+                print("session username set " + username)
+                return redirect(url_for("home"))
+            if username == u[0]:
+                return render_template('login.html', title='Login', form=form)
+                flash('Login Unsuccessful. Please check password', 'danger')
+        return render_template('login.html', title='Login', form=form)
+        flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html', title='Login', form=form)
+
 
 
 @app.route("/logout")

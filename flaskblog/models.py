@@ -1,11 +1,11 @@
 from datetime import datetime
-from _init_ import db, login_manager
+from _init_ import , login_manager
 from flask_login import UserMixin
+from flask_socketio import SocketIO, emit, join_room
+import sqlite3 as sql
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+
 
 
 class User(db.Model, UserMixin):
@@ -20,13 +20,3 @@ class User(db.Model, UserMixin):
     
 
 
-class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    to = db.Column(db.String(100), nullable=False)
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    def __repr__(self):
-        return Post(self.title, self.date_posted,self.to)

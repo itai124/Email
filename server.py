@@ -13,6 +13,8 @@ import pickle
 import  ssl
 from threading import Lock, Thread
 from email.mime.text import MIMEText
+import sqlite3 as lite
+import sys
 
 
 import base64
@@ -138,6 +140,20 @@ def handler(clientsock,addr,emails,keys):
 
 
 
+#create database
+conn = None
+file_name='flaskblog\site.db'
+try:
+    conn = lite.connect(file_name)
+    cursor = conn.cursor()
+    cursor.execute(''' CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,
+name TEXT, password TEXT) ''')
+    conn.commit()
+    print "Created"
+except lite.Error, e:
+    print "Error %s:" % file_name
+    sys.exit(1)
+    print "error"
 
 
 # main
