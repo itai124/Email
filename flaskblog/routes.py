@@ -71,8 +71,7 @@ def decrypt_a_msg(encrypted, private_key):
 def connect_send(src,dst,subject,txt):
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
     #TCPclientsock.settimeout(10)
-    TCPclientsock.connect((Host, Port))
-    print "allowed"
+    TCPclientsock.connect(('10.100.102.7', 50003))
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
     serialized_public_key=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)#serialize the key
@@ -81,7 +80,8 @@ def connect_send(src,dst,subject,txt):
     server_public_key = TCPclientsock.recv(buffsize)#recv key from server
     server_public_key=pickle.loads(server_public_key)#load the key
     server_public_key= load_pem_public_key(server_public_key, backend=default_backend())#back to the first form
-    data=["S",dst,subject,txt]
+    print "allowed"
+    data=["S",src,dst,subject,txt]
     byted_data= pickle.dumps(data)
     encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
     print "encrypted "+encrypted_msg
@@ -90,10 +90,10 @@ def connect_send(src,dst,subject,txt):
     decrypted_msg = decrypt_a_msg(server_data,private_key)
     print "after decrypte "+ decrypted_msg
     
-def connect_add(dst,subject,txt):
+def connect_add():
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
-    #TCPclientsock.settimeout(10)
-    TCPclientsock.connect((Host, Port))
+    TCPclientsock.settimeout(200)
+    TCPclientsock.connect(('10.100.102.7', 50003))
     print "allowed"
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
@@ -104,6 +104,7 @@ def connect_add(dst,subject,txt):
     server_public_key=pickle.loads(server_public_key)#load the key
     server_public_key= load_pem_public_key(server_public_key, backend=default_backend())#back to the first form
     print "T"
+
     data=["F",None,None,None]
     byted_data = pickle.dumps(data)
     encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
@@ -113,9 +114,10 @@ def connect_add(dst,subject,txt):
     decrypted_msg = decrypt_a_msg(server_data,private_key)
     print "after decrypte "+decrypted_msg
     got_emails=pickle.loads(decrypted_msg)
+    '''
     for email in got_emails:
         pprint.pprint(email)
-
+    '''
 
 
 
@@ -132,6 +134,7 @@ db.create_all()
 @app.route("/home")
 def home():
     if current_user.is_authenticated:
+        connect_add()
         posts = Post.query.filter_by(author=current_user)
     else :
         posts=[]
@@ -225,7 +228,7 @@ def new_post():
         post = Post(title=form.title.data, content=form.content.data, to=form.to.data, author=current_user)
         db.session.add(post)
         db.session.commit()
-        #connect_send(current_user.username,form.to.data,form.title.data,form.content.data)
+        connect_send(current_user.username,form.to.data,form.title.data,form.content.data)
         flash('Your post has been created!', 'success')
         return redirect(url_for('home'))
     return render_template('create_post.html', title='New Email',

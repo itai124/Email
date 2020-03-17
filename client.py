@@ -56,7 +56,7 @@ def decrypt_a_msg(encrypted, private_key):
 
 #-----------------------------------------------------
 IPAddr = gethostbyname(gethostname())
-
+'''
 #logging in to the auth server
 Host = IPAddr
 Port = 50009
@@ -83,7 +83,7 @@ elif data=="L":
     TCPclientsock.send(send_auth)
     auth = TCPclientsock.recv(buffsize)
     Email_Server_addr=pickle.loads(auth)
-    
+    '''
 
 
 
@@ -93,14 +93,11 @@ elif data=="L":
 
 #sockets
 #packet, reply = "<packet>SOME_DATA</packet>", ""
-print Email_Server_addr
-Host = Email_Server_addr[0]
-Port = Email_Server_addr[1]
 buffsize = 1024*9
-Addr = (Host,Port)
+Addr = ('10.100.102.7',50003)
 TCPclientsock = socket(AF_INET,SOCK_STREAM)
 #TCPclientsock.settimeout(10)
-TCPclientsock.connect((Host, Port))
+TCPclientsock.connect(Addr)
 
 print "allowed"
 private_key = generate_a_keys()  # generates public and private keys
