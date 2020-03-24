@@ -5,6 +5,7 @@ import email.utils
 import threading
 import localmail
 import smtplib
+import StringIO
 import socket
 from socket import *
 import redis
@@ -93,7 +94,7 @@ elif data=="L":
 
 #sockets
 #packet, reply = "<packet>SOME_DATA</packet>", ""
-buffsize = 1024*9
+buffsize = 1024*100
 Addr = ('10.100.102.7',50003)
 TCPclientsock = socket(AF_INET,SOCK_STREAM)
 #TCPclientsock.settimeout(10)
@@ -115,7 +116,8 @@ while(True):
         txt= raw_input("enter the txt you wanna send: ")
         subject= raw_input("enter the subject of your data: ")
         dst= raw_input("enter the ip of your dst client: ")
-        data=["S",dst,subject,txt]
+        src="itai"
+        data=["S",src,dst,subject,txt]
         byted_data= pickle.dumps(data)
         encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
         print "encrypted "+encrypted_msg
@@ -125,11 +127,12 @@ while(True):
         print "after decrypte "+decrypted_msg
 
     if check=="F":
-        data=["F",None,None,None]
+        data=["F",None,None,None,None]
         byted_data = pickle.dumps(data)
         encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
         print "encrypted "+encrypted_msg
         TCPclientsock.send(encrypted_msg)
+        print "sent"
         server_data = TCPclientsock.recv(buffsize)
         decrypted_msg = decrypt_a_msg(server_data,private_key)
         print "after decrypte "+decrypted_msg

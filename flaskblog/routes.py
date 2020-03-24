@@ -1,5 +1,6 @@
 #for flask
 import os
+import StringIO
 from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort
 from _init_ import app, db, bcrypt
@@ -19,7 +20,7 @@ import localmail
 import smtplib
 import socket
 from socket import *
-import redis
+#for encrypt
 import  pickle
 import ssl
 from email.mime.text import MIMEText
@@ -32,6 +33,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 #
+import re
 
 
 #defs--------------------------------------------------------
@@ -70,16 +72,17 @@ def decrypt_a_msg(encrypted, private_key):
 
 def connect_send(src,dst,subject,txt):
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
+    buffsize = 1024*100
     #TCPclientsock.settimeout(10)
     TCPclientsock.connect(('10.100.102.7', 50003))
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
-    serialized_public_key=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)#serialize the key
-    serialized_public_key=pickle.dumps(serialized_public_key)# pickle the key
-    TCPclientsock.send(serialized_public_key)# send the key
-    server_public_key = TCPclientsock.recv(buffsize)#recv key from server
-    server_public_key=pickle.loads(server_public_key)#load the key
-    server_public_key= load_pem_public_key(server_public_key, backend=default_backend())#back to the first form
+    serialized_public_key = public_key.public_bytes(encoding=serialization.Encoding.PEM,format=serialization.PublicFormat.PKCS1)  # serialize the key
+    serialized_public_key = pickle.dumps(serialized_public_key)  # pickle the key
+    TCPclientsock.send(serialized_public_key)  # send the key
+    server_public_key = TCPclientsock.recv(buffsize)  # recv key from server
+    server_public_key = pickle.loads(server_public_key)  # load the key
+    server_public_key = load_pem_public_key(server_public_key, backend=default_backend())  # back to the first form
     print "allowed"
     data=["S",src,dst,subject,txt]
     byted_data= pickle.dumps(data)
@@ -91,29 +94,46 @@ def connect_send(src,dst,subject,txt):
     print "after decrypte "+ decrypted_msg
     
 def connect_add():
+    last_ver_emails=[]
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
-    TCPclientsock.settimeout(200)
+    #TCPclientsock.settimeout(200)
     TCPclientsock.connect(('10.100.102.7', 50003))
-    print "allowed"
+    buffsize = 1024 * 100
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
-    serialized_public_key=public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)#serialize the key
-    serialized_public_key=pickle.dumps(serialized_public_key)# pickle the key
-    TCPclientsock.send(serialized_public_key)# send the key
-    server_public_key = TCPclientsock.recv(buffsize)#recv key from server
-    server_public_key=pickle.loads(server_public_key)#load the key
-    server_public_key= load_pem_public_key(server_public_key, backend=default_backend())#back to the first form
-    print "T"
-
-    data=["F",None,None,None]
+    serialized_public_key = public_key.public_bytes(encoding=serialization.Encoding.PEM,format=serialization.PublicFormat.PKCS1)  # serialize the key
+    serialized_public_key = pickle.dumps(serialized_public_key)  # pickle the key
+    TCPclientsock.send(serialized_public_key)  # send the key
+    server_public_key = TCPclientsock.recv(buffsize)  # recv key from server
+    server_public_key = pickle.loads(server_public_key)  # load the key
+    server_public_key = load_pem_public_key(server_public_key, backend=default_backend())  # back to the first form
+    print "allowed"
+#------------------------------------------------------
+    data = ["F", None, None, None, None]
     byted_data = pickle.dumps(data)
     encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
-    print "encrypted "+encrypted_msg
+    print "encrypted " + encrypted_msg
     TCPclientsock.send(encrypted_msg)
     server_data = TCPclientsock.recv(buffsize)
-    decrypted_msg = decrypt_a_msg(server_data,private_key)
-    print "after decrypte "+decrypted_msg
-    got_emails=pickle.loads(decrypted_msg)
+    decrypted_msg = decrypt_a_msg(server_data, private_key)
+    got_emails = pickle.loads(decrypted_msg)
+    print "after decrtpytiom:"
+    print  got_emails
+    for email in got_emails:
+        pprint.pprint(email)
+        inp =email
+        print('Author:', re.findall(r'Author- <(.+?)>', inp)[0])
+        Author= re.findall(r'Author- <(.+?)>', inp)[0]
+        print('Recipient:', re.findall(r'Recipient- <(.+?)>', inp)[0])
+        Recipient= re.findall(r'Recipient- <(.+?)>', inp)[0]
+        print('Subject:', re.findall(r'Subject: (.+?)\r\n', inp)[0])
+        Subject= re.findall(r'Subject: (.+?)\r\n', inp)[0]
+        print('Message:', re.findall(r'(?:.(?!\r\n))+$', inp)[0])
+        Message = re.findall(r'(?:.(?!\r\n))+$', inp)[0]
+        tamp=[Author,Recipient, Subject,Message]
+        last_ver_emails.append(tamp)
+
+    return last_ver_emails
     '''
     for email in got_emails:
         pprint.pprint(email)
@@ -122,7 +142,7 @@ def connect_add():
 
 
 
-Host = '172.16.10.186'
+Host = '10.100.102.7'
 Port = 50003
 buffsize = 1024*9
 Addr = (Host,Port)
@@ -134,7 +154,18 @@ db.create_all()
 @app.route("/home")
 def home():
     if current_user.is_authenticated:
-        connect_add()
+        posts = connect_add()
+        print posts
+        for posting in posts:
+            print type(posting[0])
+            print type(posting[1])
+            print type(posting[2])
+            print type(posting[3])
+            print current_user.username
+            if posting[0]==current_user.username:
+                post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user)
+                db.session.add(post)
+                db.session.commit()
         posts = Post.query.filter_by(author=current_user)
     else :
         posts=[]
@@ -225,6 +256,7 @@ def new_post():
     form = PostForm()
     if form.validate_on_submit():
         print form.to.data
+        print type(form.to.data)
         post = Post(title=form.title.data, content=form.content.data, to=form.to.data, author=current_user)
         db.session.add(post)
         db.session.commit()

@@ -11,6 +11,7 @@ import smtplib
 import redis
 import pickle
 import  ssl
+import StringIO
 from threading import Lock, Thread
 from email.mime.text import MIMEText
 import sqlite3 as lite
@@ -78,16 +79,25 @@ def smtp_mail(txt,subject,dst,src):
         server.sendmail(src, dst, msg.as_string())
         print "sending email..."
     except:
-        print  "no"
+        print  "no send"
     finally:
         server.quit()
 
-def fetch_mail_msg(emails,addr):
+#https://www.php.net/manual/en/function.imap-search.php
+#
+def fetch_mail_msg(addr):
+    IMAP_IP = "10.100.102.7"
+    IMAP_PORT= 143
     imap = imaplib.IMAP4(IMAP_IP,IMAP_PORT)
     imap.login('username', 'password')
     imap.select('Inbox')
     tmp, data = imap.search(None, 'ALL')
+    if tmp != 'OK':
+        print "ERROR getting messages"
     emails = []
+    print "printing type"
+    print(data)
+    print type(data[0])
     for num in data[0].split():
             print "------"
             tmp, data = imap.fetch(num, '(RFC822)')
@@ -95,8 +105,7 @@ def fetch_mail_msg(emails,addr):
             if tmp != 'OK':
                 print "ERROR getting message", num
             print('Message: {0}\n'.format(num))
-            if addr in data[0][1]:
-                emails.append(data[0][1])
+            emails.append(data[0][1])
                 #pprint.pprint(data[0][1])
     return emails
     imap.close()
@@ -116,24 +125,31 @@ def handler(clientsock,addr,emails,keys):
         data = clientsock.recv(Buffsize)
         print "encrypted "+ data
         decrypted_msg = decrypt_a_msg(data, private_key)
-        print decrypted_msg
+        print "decrypted_msg" + decrypted_msg
         fixed_data=pickle.loads(decrypted_msg)
         print fixed_data
+        print "end fixed"
         if not fixed_data:
+            print "breaking"
             break
         if(fixed_data[0]=="S"):
             lock.acquire()
+            print 'lock'
             smtp_mail(fixed_data[4],fixed_data[3],fixed_data[2],fixed_data[1])
             msg= "sent your mail"
             encrypted_msg = encrypt_a_msg(msg, client_public_key)
             clientsock.send(encrypted_msg)
+            print "unlock"
             lock.release()
         elif(fixed_data[0]=="F"):
             lock.acquire()
-            pass_emails=fetch_mail_msg(emails,addr[0])
+            print "lock"
+            pass_emails=fetch_mail_msg(addr[0])
+            pprint.pprint(pass_emails)
             byted_data = pickle.dumps(pass_emails)
             encrypted_msg = encrypt_a_msg(byted_data, client_public_key)
             clientsock.send(encrypted_msg)
+            print "unlock"
             lock.release()
 
 
@@ -150,7 +166,6 @@ IMAP_IP="10.100.102.7"
 lock=Lock()
 emails=[]
 counter=0
-IPAddr = gethostbyname(gethostname())
 mail_thread = threading.Thread(
     target=localmail.run,
     args=(SMTP_PORT, IMAP_PORT, 8880, 'localmail.mbox')
@@ -163,7 +178,7 @@ private_key = generate_a_keys()#generates public and private keys
 public_key = private_key.public_key()
 keys=[private_key,public_key]
 Socket_Port= 50003
-Buffsize = 1024 * 9
+Buffsize = 1024 * 100
 Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
 #servsock.settimeout(10)
