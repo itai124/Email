@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationE
 from models import User,Post
 
 
+
 class RegistrationForm(FlaskForm):
     username = StringField('Username',
                            validators=[DataRequired(), Length(min=2, max=20)])
@@ -44,6 +45,7 @@ class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     to = StringField('To', validators=[DataRequired()])
     content = TextAreaField('Content', validators=[DataRequired()])
+    added_file = FileField('Attach files ', validators=[FileAllowed(['jpg', 'png','txt','docx','py'])])
     submit = SubmitField('Post')
     
 

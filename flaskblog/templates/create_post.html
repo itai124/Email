@@ -45,6 +45,15 @@
                     {{ form.content(class="form-control form-control-lg") }}
                 {% endif %}
             </div>
+            <div class="form-group">
+                {{ form.added_file.label() }}
+                {{ form.added_file(class="form-control-file") }}
+                {% if form.added_file.errors %}
+                    {% for error in form.added_file.errors %}
+                        <span class="text-danger">{{ error }}</span></br>
+                    {% endfor %}
+                {% endif %}
+            </div>
         </fieldset>
         <div class="form-group">
             {{ form.submit(class="btn btn-outline-info") }}

@@ -6,19 +6,19 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #444444;
+  color: #2e2828;
 }
 
 .bg-steel {
-  background-color: #5f788a;
+  background-color: #cdd6cb;
 }
 
 .site-header .navbar-nav .nav-link {
-  color: #cbd5db;
+  color: #0b03fc;
 }
 
 .site-header .navbar-nav .nav-link:hover {
-  color: #ffffff;
+  color: #d6d4d4;
 }
 
 .site-header .navbar-nav .nav-link.active {

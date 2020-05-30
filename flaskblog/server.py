@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import email.utils
 import threading
 import thread
@@ -6,6 +9,7 @@ from socket import *
 import pprint
 import imaplib
 import mailbox
+import  os
 import email.utils
 import smtplib
 import redis
@@ -28,12 +32,15 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 
 #defs--------------------------------------------------------
 def generate_a_keys():
     private_key = rsa.generate_private_key(
         public_exponent=65537,
-        key_size=2048*3,
+        key_size=2048*6,
         backend=default_backend())
     return private_key
 
@@ -91,28 +98,31 @@ def fetch_mail_msg(addr):
     imap = imaplib.IMAP4(IMAP_IP,IMAP_PORT)
     imap.login('username', 'password')
     imap.select('Inbox')
-    tmp, data = imap.search(None, 'ALL')
+    tmp, data = imap.search(None, 'NEW')
     if tmp != 'OK':
         print "ERROR getting messages"
     emails = []
     print "printing type"
     print(data)
     print type(data[0])
-    for num in data[0].split():
-            print "------"
-            tmp, data = imap.fetch(num, '(RFC822)')
-            print  data
-            if tmp != 'OK':
-                print "ERROR getting message", num
-            print('Message: {0}\n'.format(num))
-            emails.append(data[0][1])
-                #pprint.pprint(data[0][1])
+    try:
+        for num in data[0].split():
+                print "------"
+                tmp, data = imap.fetch(num, '(RFC822)')
+                print  data
+                if tmp != 'OK':
+                    print "ERROR getting message", num
+                print('Message: {0}\n'.format(num))
+                emails.append(data[0][1])
+    except:
+        print "no emails "
     return emails
     imap.close()
 
 #-----------------------------------------------------
 
 def handler(clientsock,addr,emails,keys):
+    Buffsize=1024*10
     client_public_key = clientsock.recv(Buffsize)
     send_client_public_key=pickle.loads(client_public_key)
     client_public_key= load_pem_public_key(send_client_public_key, backend=default_backend())
@@ -121,6 +131,7 @@ def handler(clientsock,addr,emails,keys):
     clientsock.send(send_serialize_public_key)
     print "end of public key transformation"
     print "start safe communication>>"
+
     while 1:
         data = clientsock.recv(Buffsize)
         print "encrypted "+ data
@@ -135,17 +146,44 @@ def handler(clientsock,addr,emails,keys):
         if(fixed_data[0]=="S"):
             lock.acquire()
             print 'lock'
-            smtp_mail(fixed_data[4],fixed_data[3],fixed_data[2],fixed_data[1])
-            msg= "sent your mail"
-            encrypted_msg = encrypt_a_msg(msg, client_public_key)
-            clientsock.send(encrypted_msg)
+            if(fixed_data[5]!=None):
+                print "getting a file"
+                basename = os.path.basename(fixed_data[5])
+                msg = "sent your mail"
+                encrypted_msg = encrypt_a_msg(msg, client_public_key)
+                clientsock.send(encrypted_msg)
+                kinds = basename.split(".")
+                buffsize=Buffsize
+                if kinds[1] == "png" or kinds[1] == "jpg":
+                    buffsize = 1000000
+                print Addr
+                # receive data and write it to file
+                l = clientsock.recv(buffsize)
+                binary_data=""
+                while (l):
+                    print "copying data"
+                    l = clientsock.recv(buffsize)
+                    binary_data=binary_data+l
+                    print l
+                print "got file"
+                buffsize=Buffsize
+                print binary_data+" this is the binary data!!!!!!!!!!!!!!!!!"
+                dt="ppppphhhhh"
+                binary_datas=pickle.dumps(binary_data)
+                unicode(binary_datas)
+                contect=fixed_data[4]+dt+basename+dt+binary_datas
+                smtp_mail(contect, fixed_data[3], fixed_data[2], fixed_data[1])
+            else:
+                msg= "sent your mail"
+                encrypted_msg = encrypt_a_msg(msg, client_public_key)
+                clientsock.send(encrypted_msg)
+                smtp_mail(fixed_data[4],fixed_data[3],fixed_data[2],fixed_data[1])
             print "unlock"
             lock.release()
         elif(fixed_data[0]=="F"):
             lock.acquire()
             print "lock"
             pass_emails=fetch_mail_msg(addr[0])
-            pprint.pprint(pass_emails)
             byted_data = pickle.dumps(pass_emails)
             encrypted_msg = encrypt_a_msg(byted_data, client_public_key)
             clientsock.send(encrypted_msg)
@@ -165,7 +203,6 @@ SMTP_IP="10.100.102.7"
 IMAP_IP="10.100.102.7"
 lock=Lock()
 emails=[]
-counter=0
 mail_thread = threading.Thread(
     target=localmail.run,
     args=(SMTP_PORT, IMAP_PORT, 8880, 'localmail.mbox')
@@ -177,14 +214,17 @@ print "waiting for clients"
 private_key = generate_a_keys()#generates public and private keys
 public_key = private_key.public_key()
 keys=[private_key,public_key]
-Socket_Port= 50003
-Buffsize = 1024 * 100
+Socket_Port= 50004
+Buffsize = 1024 * 10
 Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
+
 #servsock.settimeout(10)
 '''https://www.example-code.com/python/ssl_server.asp'''
 servsock.bind(Addr)
+print "1"
 servsock.listen(3)
+print "1"
 
 while True:
     print "Im waiting for connection..."

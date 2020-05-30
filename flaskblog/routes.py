@@ -10,6 +10,7 @@ from _init_ import app, db, bcrypt
 from forms import RegistrationForm, LoginForm
 from models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
+from sqlalchemy import  or_
 #for sockets with server
 import pprint
 import imaplib
@@ -19,6 +20,7 @@ import threading
 import localmail
 import smtplib
 import socket
+import subprocess
 from socket import *
 #for encrypt
 import  pickle
@@ -37,10 +39,31 @@ import re
 
 
 #defs--------------------------------------------------------
+import os
+import threading
+
+
+
+def findFiles(path,filename):
+        """
+        finding files in a dir
+        """
+        global found
+        os.chdir(path)
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                if found:
+                        break
+                if f==filename:
+                      found= root+"\\"+ f
+            if found:
+               break
+
+#defs--------------------------------------------------------
 def generate_a_keys():
     private_key = rsa.generate_private_key(
         public_exponent=65537,
-        key_size=2048*3,
+        key_size=2048*6,
         backend=default_backend())
     return private_key
 
@@ -70,11 +93,11 @@ def decrypt_a_msg(encrypted, private_key):
     )
     return original
 
-def connect_send(src,dst,subject,txt):
+def connect_send(src,dst,subject,txt,filename):
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
-    buffsize = 1024*100
+    buffsize = 1024*10
     #TCPclientsock.settimeout(10)
-    TCPclientsock.connect(('10.100.102.7', 50003))
+    TCPclientsock.connect(('10.100.102.7', 50004))
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
     serialized_public_key = public_key.public_bytes(encoding=serialization.Encoding.PEM,format=serialization.PublicFormat.PKCS1)  # serialize the key
@@ -84,7 +107,7 @@ def connect_send(src,dst,subject,txt):
     server_public_key = pickle.loads(server_public_key)  # load the key
     server_public_key = load_pem_public_key(server_public_key, backend=default_backend())  # back to the first form
     print "allowed"
-    data=["S",src,dst,subject,txt]
+    data=["S",src,dst,subject,txt,filename]
     byted_data= pickle.dumps(data)
     encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
     print "encrypted "+encrypted_msg
@@ -92,12 +115,33 @@ def connect_send(src,dst,subject,txt):
     server_data = TCPclientsock.recv(buffsize)
     decrypted_msg = decrypt_a_msg(server_data,private_key)
     print "after decrypte "+ decrypted_msg
+    print "going to send this file"
+
+    if filename!=None:
+        print "the file name is - " + filename
+        print "sending now txt file"
+        Buffsize=buffsize
+        basename=os.path.basename(filename)
+        kind= basename.split(".")
+        if kind[1]=="png" or kind[1]=="jpg":
+            Buffsize=1000000
+        f = open(filename, "r+b")
+        l = f.read(Buffsize)
+        print "opened"
+        while (l):
+            print l
+            TCPclientsock.send(l)
+            l = f.read(Buffsize)
+        Buffsize = buffsize
+        TCPclientsock.close()
+        f.close()
+
     
 def connect_add():
     last_ver_emails=[]
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
     #TCPclientsock.settimeout(200)
-    TCPclientsock.connect(('10.100.102.7', 50003))
+    TCPclientsock.connect(('10.100.102.7', 50004))
     buffsize = 1024 * 100
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
@@ -109,7 +153,7 @@ def connect_add():
     server_public_key = load_pem_public_key(server_public_key, backend=default_backend())  # back to the first form
     print "allowed"
 #------------------------------------------------------
-    data = ["F", None, None, None, None]
+    data = ["F", None, None, None, None,None]
     byted_data = pickle.dumps(data)
     encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
     print "encrypted " + encrypted_msg
@@ -130,7 +174,17 @@ def connect_add():
         Subject= re.findall(r'Subject: (.+?)\r\n', inp)[0]
         print('Message:', re.findall(r'(?:.(?!\r\n))+$', inp)[0])
         Message = re.findall(r'(?:.(?!\r\n))+$', inp)[0]
-        tamp=[Author,Recipient, Subject,Message]
+        print Message
+        msg=Message.rsplit('ppppphhhhh',2)
+        Message=msg[0]
+        try:
+            binary_code=msg[2]
+            binary_code=pickle.loads(binary_code)
+            file_name=msg[1]
+        except:
+            binary_code=None
+            file_name=None
+        tamp=[Author,Recipient, Subject,Message,file_name,binary_code]
         last_ver_emails.append(tamp)
 
     return last_ver_emails
@@ -144,7 +198,7 @@ def connect_add():
 
 Host = '10.100.102.7'
 Port = 50003
-buffsize = 1024*9
+buffsize = 1024*10
 Addr = (Host,Port)
 
 
@@ -154,6 +208,7 @@ db.create_all()
 @app.route("/home")
 def home():
     if current_user.is_authenticated:
+        posts=[]
         posts = connect_add()
         print posts
         for posting in posts:
@@ -161,20 +216,68 @@ def home():
             print type(posting[1])
             print type(posting[2])
             print type(posting[3])
+            print type(posting[4])
+            print type(posting[5])
             print current_user.username
             if posting[0]==current_user.username:
-                post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user)
+                if posting[4]!="":
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user,added_files=posting[5],filenames=posting[4])
+                else:
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user)
                 db.session.add(post)
                 db.session.commit()
-        posts = Post.query.filter_by(author=current_user)
+            elif posting[1]==current_user.username:
+                user= User.query.filter_by(username= posting[0])
+                if posting[4] != "":
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=user,added_files=posting[5],filenames=posting[4])
+                else:
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=user)
+                db.session.add(post)
+                db.session.commit()
+        #posts = Post.query.filter_by(author=current_user)
+
+        posts = Post.query.filter_by(to=current_user.username)
+        print str(posts)
     else :
         posts=[]
     return render_template('home.html', posts=posts)
+    #return render_template('home.html', posts=posts,sents=posts2)
 
 
-@app.route("/about")
-def about():
-    return render_template('about.html', title='About')
+@app.route("/sent")
+def sent():
+    if current_user.is_authenticated:
+        posts = connect_add()
+        print posts
+        for posting in posts:
+            print type(posting[0])
+            print type(posting[1])
+            print type(posting[2])
+            print type(posting[3])
+            print type(posting[4])
+            print type(posting[5])
+            print current_user.username
+            if posting[0]==current_user.username:
+                if posting[4]!="":
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user,added_files=posting[5],filenames=posting[4])
+                else:
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user)
+                db.session.add(post)
+                db.session.commit()
+            elif posting[1]==current_user.username:
+                user= User.query.filter_by(username= posting[0])
+                if posting[4] != "":
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=user,added_files=posting[5],filenames=posting[4])
+                else:
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=user)
+                db.session.add(post)
+                db.session.commit()
+        posts = Post.query.filter_by(author=current_user)
+        #posts = Post.query.filter_by(to=current_user.username)
+        print str(posts)
+    else:
+        posts = []
+    return render_template('sent.html', posts=posts)
 
 
 @app.route("/register", methods=['GET', 'POST'])
@@ -222,7 +325,7 @@ def save_picture(form_picture):
     _, f_ext = os.path.splitext(form_picture.filename)
     picture_fn = random_hex + f_ext
     picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
-    output_size = (125, 125)
+    output_size = (135, 135)
     i = Image.open(form_picture)
     i.thumbnail(output_size)
     i.save(picture_path)
@@ -236,6 +339,7 @@ def save_picture(form_picture):
 def account():
     form = UpdateAccountForm()
     if form.validate_on_submit():
+        print "picture name " + form.picture.data.filename
         if form.picture.data:
             picture_file = save_picture(form.picture.data)
             current_user.image_file = picture_file
@@ -255,12 +359,41 @@ def account():
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
-        print form.to.data
-        print type(form.to.data)
-        post = Post(title=form.title.data, content=form.content.data, to=form.to.data, author=current_user)
-        db.session.add(post)
-        db.session.commit()
-        connect_send(current_user.username,form.to.data,form.title.data,form.content.data)
+        #post = Post(title=form.title.data, content=form.content.data, to=form.to.data, author=current_user)
+        #db.session.add(post)
+        #db.session.commit()
+        print  " DDDDDDDDDDDDDDD"
+        if form.added_file.data:
+            filename = form.added_file.data.filename
+            print " the filename is " +filename
+            global found
+            found = None
+            start = "C:\\Users\\Itai\\"
+            dirs = [start + "Pictures\\", start + "Documents\\", start + "Downloads\\", start + "Desktop\\"]
+
+            for i in range(4):
+                threading.Thread(target=findFiles, args=[dirs[i], filename]).start()
+
+            while found == None:
+                pass
+
+            print "i found the file " + str(filename) + " in " + str(found)
+            binary_file= open(found,'r+b')
+            print binary_file
+            print "This is file"
+            binary_file.close()
+            connect_send(current_user.username,form.to.data,form.title.data,form.content.data,found)
+
+        else:
+            users= User.query.all()
+            existed_user= False
+            for user in users:
+                if user.username==form.to.data:
+                    existed_user=True
+            if existed_user:
+                flash('The user you trying to send to is not existed ', 'danger')
+                return redirect(url_for('login'))
+            connect_send(current_user.username, form.to.data, form.title.data, form.content.data, None)
         flash('Your post has been created!', 'success')
         return redirect(url_for('home'))
     return render_template('create_post.html', title='New Email',
@@ -268,6 +401,7 @@ def new_post():
 
 
 @app.route("/post/<int:post_id>")
+@login_required
 def post(post_id):
     post = Post.query.get_or_404(post_id)
     if post :
@@ -275,6 +409,43 @@ def post(post_id):
     else:
         print "ggg"
     return render_template('post.html', title=post.title, post=post,)
+
+@app.route("/post/<int:post_id>/getfile", methods=['GET', 'POST'])
+@login_required
+def get_files(post_id):
+    post = Post.query.get_or_404(post_id)
+    print "no file"
+    if post.added_files and post.filenames:
+        print post.filenames
+        basename =  os.path.basename(post.filenamese)
+        f = open('C:\Python27\Scripts\\'+basename, 'w+b')
+        f.write(post.added_file)
+        f.close()
+        this_file,kind= basename.split(".")
+        if kind=="png" or kind=="jpg":
+            image = Image.open(post.filename)
+            image.show()
+        else:
+            return redirect(url_for('post', post_id=post.id))
+            subprocess.call(['C:\Windows\Notepad.exe', post.filename])
+            
+@app.route("/post/<int:post_id>/editfile", methods=['GET', 'POST'])
+@login_required
+def edit_files(post_filename):
+    if  post_filename:
+        print post_filename
+        basename =  os.path.basename(post_filename)
+        this_file,kkind= basename.split(".")
+        if kkind=="png" or kkind=="jpg":
+            p = subprocess.Popen('mspaint ' + post_filename, shell=True)
+            output = p.communicate()
+        else:
+            p = subprocess.Popen('notepad ' + post_filename, shell=True)
+            output = p.communicate()
+
+
+
+
 
 @app.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
 @login_required
