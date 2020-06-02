@@ -97,7 +97,7 @@ def connect_send(src,dst,subject,txt,filename):
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
     buffsize = 1024*10
     #TCPclientsock.settimeout(10)
-    TCPclientsock.connect(('10.100.102.7', 50004))
+    TCPclientsock.connect(('172.16.10.216', 50004))
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
     serialized_public_key = public_key.public_bytes(encoding=serialization.Encoding.PEM,format=serialization.PublicFormat.PKCS1)  # serialize the key
@@ -108,6 +108,7 @@ def connect_send(src,dst,subject,txt,filename):
     server_public_key = load_pem_public_key(server_public_key, backend=default_backend())  # back to the first form
     print "allowed"
     data=["S",src,dst,subject,txt,filename]
+    print data
     byted_data= pickle.dumps(data)
     encrypted_msg = encrypt_a_msg(byted_data, server_public_key)
     print "encrypted "+encrypted_msg
@@ -136,12 +137,37 @@ def connect_send(src,dst,subject,txt,filename):
         TCPclientsock.close()
         f.close()
 
+def filter_emails(posts):
+    good_emails=[[]]
+    emails=Post.query.all()
+    print "emails:"
+    print emails
+    for email in emails:
+        print str(email.to)
+        print str(email.title)
+        print str(email.content)
+        email.title
+        for post in posts:
+            if post[1]==str(email.to):
+                if post[2]==str(email.title):
+                     if post[3]==str(email.content):
+                        good_emails.append(post)
+    return good_emails
+
+
+
+
+    return emails
     
 def connect_add():
     last_ver_emails=[]
     TCPclientsock = socket(AF_INET,SOCK_STREAM)
     #TCPclientsock.settimeout(200)
-    TCPclientsock.connect(('10.100.102.7', 50004))
+    hostname = gethostname()
+    ## getting the IP address using socket.gethostbyname() method
+    ip_address = gethostbyname(hostname)
+    print ip_address
+    TCPclientsock.connect(("172.16.10.216", 50004))
     buffsize = 1024 * 100
     private_key = generate_a_keys()  # generates public and private keys
     public_key = private_key.public_key()
@@ -179,7 +205,6 @@ def connect_add():
         Message=msg[0]
         try:
             binary_code=msg[2]
-            binary_code=pickle.loads(binary_code)
             file_name=msg[1]
         except:
             binary_code=None
@@ -195,8 +220,7 @@ def connect_add():
 
 
 
-
-Host = '10.100.102.7'
+Host = '172.16.10.216'
 Port = 50003
 buffsize = 1024*10
 Addr = (Host,Port)
@@ -210,8 +234,8 @@ def home():
     if current_user.is_authenticated:
         posts=[]
         posts = connect_add()
-        print posts
-        for posting in posts:
+        good_emails=posts
+        for posting in good_emails:
             print type(posting[0])
             print type(posting[1])
             print type(posting[2])
@@ -248,8 +272,8 @@ def home():
 def sent():
     if current_user.is_authenticated:
         posts = connect_add()
-        print posts
-        for posting in posts:
+        good_emails=posts
+        for posting in good_emails:
             print type(posting[0])
             print type(posting[1])
             print type(posting[2])
@@ -368,7 +392,7 @@ def new_post():
             print " the filename is " +filename
             global found
             found = None
-            start = "C:\\Users\\Itai\\"
+            start = "C:\Users\u101040.DESHALIT"
             dirs = [start + "Pictures\\", start + "Documents\\", start + "Downloads\\", start + "Desktop\\"]
 
             for i in range(4):
@@ -390,7 +414,7 @@ def new_post():
             for user in users:
                 if user.username==form.to.data:
                     existed_user=True
-            if existed_user:
+            if not existed_user:
                 flash('The user you trying to send to is not existed ', 'danger')
                 return redirect(url_for('login'))
             connect_send(current_user.username, form.to.data, form.title.data, form.content.data, None)
@@ -425,6 +449,7 @@ def get_files(post_id):
         if kind=="png" or kind=="jpg":
             image = Image.open(post.filename)
             image.show()
+            return redirect(url_for('post', post_id=post.id))
         else:
             return redirect(url_for('post', post_id=post.id))
             subprocess.call(['C:\Windows\Notepad.exe', post.filename])

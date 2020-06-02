@@ -32,8 +32,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+
 
 
 #defs--------------------------------------------------------
@@ -93,7 +92,7 @@ def smtp_mail(txt,subject,dst,src):
 #https://www.php.net/manual/en/function.imap-search.php
 #
 def fetch_mail_msg(addr):
-    IMAP_IP = "10.100.102.7"
+    IMAP_IP = "172.16.10.216"
     IMAP_PORT= 143
     imap = imaplib.IMAP4(IMAP_IP,IMAP_PORT)
     imap.login('username', 'password')
@@ -169,9 +168,8 @@ def handler(clientsock,addr,emails,keys):
                 buffsize=Buffsize
                 print binary_data+" this is the binary data!!!!!!!!!!!!!!!!!"
                 dt="ppppphhhhh"
-                binary_datas=pickle.dumps(binary_data)
-                unicode(binary_datas)
-                contect=fixed_data[4]+dt+basename+dt+binary_datas
+                unicode(binary_data)
+                contect=fixed_data[4]+dt+basename+dt+binary_data
                 smtp_mail(contect, fixed_data[3], fixed_data[2], fixed_data[1])
             else:
                 msg= "sent your mail"
@@ -198,9 +196,9 @@ def handler(clientsock,addr,emails,keys):
 # main
 SMTP_PORT = 2025
 IMAP_PORT = 143
-Host='10.100.102.7'
-SMTP_IP="10.100.102.7"
-IMAP_IP="10.100.102.7"
+Host='172.16.10.216'
+SMTP_IP="172.16.10.216"
+IMAP_IP="172.16.10.216"
 lock=Lock()
 emails=[]
 mail_thread = threading.Thread(

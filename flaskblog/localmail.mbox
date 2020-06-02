@@ -22,3 +22,36 @@ Subject: second
 
 hello this is second msg.
 
+From MAILER-DAEMON Tue Jun  2 10:09:19 2020
+Received: Test Server.
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+To: Recipient- <eran 3>
+From: Author- <itai124>
+Subject: hello
+
+ff
+
+From MAILER-DAEMON Tue Jun  2 11:00:35 2020
+Received: Test Server.
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+To: Recipient- <eran3>
+From: Author- <itai124>
+Subject: eran3
+
+hello there
+
+From MAILER-DAEMON Tue Jun  2 11:14:09 2020
+Received: Test Server.
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+To: Recipient- <eran3>
+From: Author- <itai124>
+Subject: hello this is me
+
+efe
+
