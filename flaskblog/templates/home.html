@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-    {% if posts %}
+    {% if not state %}
     	{% for post in posts %}
        	 	<article class="media content-section">
           		<img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/' + post.author.image_file) }}">
@@ -17,7 +17,7 @@
         	</article>
    	 {% endfor %}
     {% else %}
-	<h3>There is no Emails for you</h3>
+	<h3>There are no Emails for you</h3>
     {% endif %}
 
 {% endblock content %}

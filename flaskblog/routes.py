@@ -137,27 +137,26 @@ def connect_send(src,dst,subject,txt,filename):
         TCPclientsock.close()
         f.close()
 
+
 def filter_emails(posts):
-    good_emails=[[]]
+    good_emails=[]
     emails=Post.query.all()
-    print "emails:"
-    print emails
+    print "emails: "
     for email in emails:
         print str(email.to)
         print str(email.title)
         print str(email.content)
-        email.title
         for post in posts:
-            if post[1]==str(email.to):
-                if post[2]==str(email.title):
-                     if post[3]==str(email.content):
-                        good_emails.append(post)
+            print "post: "
+            print post
+            if str(post[1])!=str(email.to) or str(post[2])!=str(email.title) or str(post[3])!=str(email.content):
+                    good_emails.append(post)
+                    print "this is real email"
     return good_emails
 
 
 
 
-    return emails
     
 def connect_add():
     last_ver_emails=[]
@@ -198,8 +197,8 @@ def connect_add():
         Recipient= re.findall(r'Recipient- <(.+?)>', inp)[0]
         print('Subject:', re.findall(r'Subject: (.+?)\r\n', inp)[0])
         Subject= re.findall(r'Subject: (.+?)\r\n', inp)[0]
-        print('Message:', re.findall(r'(?:.(?!\r\n))+$', inp)[0])
-        Message = re.findall(r'(?:.(?!\r\n))+$', inp)[0]
+        print('Message:', re.findall(r'\r\n\r\n([\w\d\s]*)', inp)[0])
+        Message= re.findall(r'\r\n\r\n([\w\d\s]*)', inp)[0]
         print Message
         msg=Message.rsplit('ppppphhhhh',2)
         Message=msg[0]
@@ -234,7 +233,7 @@ def home():
     if current_user.is_authenticated:
         posts=[]
         posts = connect_add()
-        good_emails=posts
+        good_emails=filter_emails(posts)
         for posting in good_emails:
             print type(posting[0])
             print type(posting[1])
@@ -251,20 +250,33 @@ def home():
                 db.session.add(post)
                 db.session.commit()
             elif posting[1]==current_user.username:
-                user= User.query.filter_by(username= posting[0])
-                if posting[4] != "":
-                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=user,added_files=posting[5],filenames=posting[4])
+                #user= User.query.filter_by(username= posting[0]).first
+                saved_username= current_user.username
+                current_user.username = str(posting[0])
+                db.session.commit()
+                if posting[4] != None:
+                    print posting[4]
+                    print "this is filename "
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user,added_files=posting[5],filenames=posting[4])
                 else:
-                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=user)
+                    post = Post(title=posting[2], content=posting[3], to=posting[1], author=current_user)
                 db.session.add(post)
                 db.session.commit()
         #posts = Post.query.filter_by(author=current_user)
+                current_user.username= saved_username
+                db.session.commit()
 
-        posts = Post.query.filter_by(to=current_user.username)
-        print str(posts)
+        emailss = Post.query.filter_by(to=current_user.username)
+        print str(emailss)
+        Nothing = True
+        if emailss != []:
+            Nothing = False
     else :
-        posts=[]
-    return render_template('home.html', posts=posts)
+        emailss=[]
+        Nothing= True
+
+
+    return render_template('home.html', posts=emailss,state=Nothing)
     #return render_template('home.html', posts=posts,sents=posts2)
 
 
@@ -272,7 +284,7 @@ def home():
 def sent():
     if current_user.is_authenticated:
         posts = connect_add()
-        good_emails=posts
+        good_emails=filter_emails(posts)
         for posting in good_emails:
             print type(posting[0])
             print type(posting[1])
@@ -289,19 +301,32 @@ def sent():
                 db.session.add(post)
                 db.session.commit()
             elif posting[1]==current_user.username:
-                user= User.query.filter_by(username= posting[0])
-                if posting[4] != "":
+                #user= User.query.filter_by(username= posting[0]).first
+                saved_username= current_user.username
+                current_user.username= posting[0]
+                db.session.commit()
+                if posting[4]!= None:
                     post = Post(title=posting[2], content=posting[3], to=posting[1], author=user,added_files=posting[5],filenames=posting[4])
                 else:
                     post = Post(title=posting[2], content=posting[3], to=posting[1], author=user)
                 db.session.add(post)
                 db.session.commit()
-        posts = Post.query.filter_by(author=current_user)
+
+            current_user.username = saved_username
+            db.session.commit()
+
+        emails = Post.query.filter_by(author=current_user)
         #posts = Post.query.filter_by(to=current_user.username)
-        print str(posts)
+        print str(emails)
+        Nothing2 = True
+        if emails != []:
+            Nothing2 = False
     else:
-        posts = []
-    return render_template('sent.html', posts=posts)
+        emails = []
+        Nothing2=True
+
+
+    return render_template('home.html', posts=emails, state=Nothing2)
 
 
 @app.route("/register", methods=['GET', 'POST'])
@@ -388,6 +413,14 @@ def new_post():
         #db.session.commit()
         print  " DDDDDDDDDDDDDDD"
         if form.added_file.data:
+            users= User.query.all()
+            existed_user= False
+            for user in users:
+                if user.username==form.to.data:
+                    existed_user=True
+            if not existed_user:
+                flash('The user you trying to send to is not existed ', 'danger')
+                return redirect(url_for('login'))
             filename = form.added_file.data.filename
             print " the filename is " +filename
             global found
@@ -418,6 +451,9 @@ def new_post():
                 flash('The user you trying to send to is not existed ', 'danger')
                 return redirect(url_for('login'))
             connect_send(current_user.username, form.to.data, form.title.data, form.content.data, None)
+            post = Post(title=form.title.data, content=form.content.data, to=form.to.data, author=current_user)
+            db.session.add(post)
+            db.session.commit()
         flash('Your post has been created!', 'success')
         return redirect(url_for('home'))
     return render_template('create_post.html', title='New Email',

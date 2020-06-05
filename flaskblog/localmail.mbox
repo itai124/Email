@@ -1,57 +1,66 @@
-From MAILER-DAEMON Mon May 18 09:03:52 2020
+From MAILER-DAEMON Fri Jun  5 06:16:38 2020
 Received: Test Server.
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
-To: Recipient- <itai>
-From: Author- <eran>
-Subject: first
-
-hello this is first msg.
-hello this is first msg.
-hello this is first msg.
-
-From MAILER-DAEMON Mon May 18 09:08:03 2020
-Received: Test Server.
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-To: Recipient- <itai>
-From: Author- <eran>
-Subject: second
-
-hello this is second msg.
-
-From MAILER-DAEMON Tue Jun  2 10:09:19 2020
-Received: Test Server.
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-To: Recipient- <eran 3>
-From: Author- <itai124>
+To: Recipient- <daniel>
+From: Author- <itai>
 Subject: hello
 
-ff
+hello u need to come rn
 
-From MAILER-DAEMON Tue Jun  2 11:00:35 2020
+From MAILER-DAEMON Fri Jun  5 06:36:23 2020
 Received: Test Server.
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
-To: Recipient- <eran3>
-From: Author- <itai124>
+To: Recipient- <itai>
+From: Author- <itai>
+Subject: hello
+
+this is me
+
+From MAILER-DAEMON Fri Jun  5 06:39:20 2020
+Received: Test Server.
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+To: Recipient- <daniel>
+From: Author- <itai>
+Subject: hello
+
+123456789
+
+From MAILER-DAEMON Fri Jun  5 07:49:05 2020
+Received: Test Server.
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+To: Recipient- <daniel>
+From: Author- <itai>
 Subject: eran3
 
-hello there
+ggggggg
 
-From MAILER-DAEMON Tue Jun  2 11:14:09 2020
+From MAILER-DAEMON Fri Jun  5 08:35:51 2020
 Received: Test Server.
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
-To: Recipient- <eran3>
-From: Author- <itai124>
-Subject: hello this is me
+To: Recipient- <daniel>
+From: Author- <itai>
+Subject: 111
+
+rgrgr
+
+From MAILER-DAEMON Fri Jun  5 09:04:56 2020
+Received: Test Server.
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+To: Recipient- <daniel>
+From: Author- <itai>
+Subject: this
 
 efe
 

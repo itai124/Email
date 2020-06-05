@@ -132,6 +132,7 @@ def handler(clientsock,addr,emails,keys):
     print "start safe communication>>"
 
     while 1:
+        print "going to recv data"
         data = clientsock.recv(Buffsize)
         print "encrypted "+ data
         decrypted_msg = decrypt_a_msg(data, private_key)
@@ -217,10 +218,8 @@ Buffsize = 1024 * 10
 Addr = (Host, Socket_Port)
 servsock = socket(AF_INET, SOCK_STREAM)
 
-#servsock.settimeout(10)
-'''https://www.example-code.com/python/ssl_server.asp'''
+
 servsock.bind(Addr)
-print "1"
 servsock.listen(3)
 print "1"
 
